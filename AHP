@@ -1,0 +1,387 @@
+
+##importations des bibliotheques
+import random
+import numpy as np
+import pandas as pd
+import numpy as np
+
+# Charger le fichier CSV en tant que DataFrame pandas
+df = pd.read_csv('insurance_data.csv')
+df = df.loc[:, ['age', 'gender','bmi','diabetic','children','smoker']]
+df = df.dropna(subset=['age'])
+#nb=int(input("Le nombre d'alternatives voulues "))
+df=df.head(2)
+# Convertir le DataFrame en un tableau numpy
+data = df.to_numpy()
+print(df)
+
+n=6
+l = 0
+size = int(n * (n - 1) / 2)
+criteria = [[0] * n for i in range(n)]
+b = [0] * size
+for k in range(size):
+    b[k] = random.randrange(1, 10)
+
+for i in range(n):
+    for j in range(n):
+        if (i > j):
+            criteria[i][j] = b[l]
+            criteria[j][i] = 1 / criteria[i][j]
+            l = l + 1
+        elif (i == j):
+            criteria[i][j] = 1
+
+print("\n Criteria matrix du critère")
+for row in criteria:
+    print(' '.join([str(elem) for elem in row])) 
+    
+###########NormalizedCriteria
+
+criteriaNormalized = criteria
+print(" \n 2) Normalized Criteria")
+
+#determiner la somme de chaque colonnes
+sum = [0] * n
+l = 0
+s = 0
+for j in range(n):
+    while s < n:
+        sum[l] = criteriaNormalized[s][j] + sum[l]
+        s = s + 1
+        roundsum = np.round(sum, decimals=2)
+    l = l + 1
+    s = 0
+print("\n Columns Sum")
+print(roundsum)
+#normaliser le tableau crtieria en divisant chaque cellule par     la somme     de sa colonne
+t = 0
+i = 0
+for j in range(n):
+    while i < n:
+        criteriaNormalized[i][j] = criteriaNormalized[i][j] / sum[t]
+        i = i + 1
+        criteriaNormalized = np.round_(criteriaNormalized, decimals=2)
+    t = t + 1
+    i = 0
+
+AVG = [0] * n
+j = 0
+l = 0
+for i in range(n):
+    while j < n:
+        AVG[l] = criteriaNormalized[i][j] + AVG[l]
+        AVG = np.round(AVG, decimals=3)
+        j = j + 1
+    AVG[l] = AVG[l] / n
+    l = l + 1
+    j = 0
+
+print("\n AVG")
+print(AVG)
+criteriaNormalized = np.c_[criteriaNormalized, AVG]
+criteriaNormalized = np.round(criteriaNormalized, decimals=2)
+
+print("\n Normalized Criteria")
+for row in criteriaNormalized:
+    print(' '.join([str(elem) for elem in row]))
+
+AW = [0] * n
+LMBD = [0] * n
+
+j = 0
+l = 0
+s = 0
+#cacul de AW
+for i in range(n):
+    while j < n:
+        AW[l] = AVG[s] * criteria[i][j] + AW[l]
+        AW = np.round(AW, decimals=3)
+        j = j + 1
+        s = s + 1
+    l = l + 1
+    j = 0
+    s = 0
+AW = np.round(AW, decimals=2)
+print("\n AW")
+print(AW)
+for i in range(n):
+    LMBD[i] = AVG[i] / AW[i]
+    LMBD = np.round(LMBD, decimals=2)
+CI=(np.max(LMBD)-n)/n-1
+print("\n Lambda")
+print(LMBD)
+
+criteriaNormalized = np.c_[criteriaNormalized, AVG]
+criteriaNormalized = np.round(criteriaNormalized, decimals=2)
+criteriaNormalized = np.c_[criteriaNormalized, AW]
+criteriaNormalized = np.round(criteriaNormalized, decimals=2)
+criteriaNormalized = np.c_[criteriaNormalized, LMBD]
+
+
+
+
+print("\n Normalized Criteria")
+for row in criteriaNormalized:
+    print(' '.join([str(elem) for elem in row]))
+    
+print("CI")
+print(CI)
+
+### PARTIE ALTERNATIVE
+
+a = [[0] * len(data) for i in range(len(data))]
+i=0
+j=0
+k=0
+ALT=[]
+while i<len(data):
+    while j<len(data):
+        if(i>j):
+            a[i][j]=data[i][0]/data[j][0]
+            a[j][i]=1/a[i][j]
+        elif(i==j):
+            a[i][j]=1
+        j=j+1
+    i=i+1
+    j=0
+a = np.round(a, decimals=2)
+ALT.append(a)
+print("\nAlternatives matrix du critère :" +str(df.columns[0]))
+for row in a:
+    print(' '.join([str(elem) for elem in row]))
+
+##valeur binaire(genre)
+a2 = [[0] * len(data) for i in range(len(data))]
+i=0
+j=0
+k=0
+while i<len(data):
+    while j<len(data):
+        if(i>j):
+            if(data[i][1]=="male"):
+                if(data[j][1]=="male"):
+                    a2[i][j]=1 #homme et homme c'est pareil
+                    a2[j][i]=1/a2[i][j]
+                else:
+                    a2[i][j]=2 #homme et femme donc ça compte plus
+                    a2[j][i]=1/a2[i][j]
+            elif(data[i][1]=='female'):
+                if(data[j][1]=='female'):
+                    a2[i][j]=1 #femme et femme c'est pareil
+                    a2[j][i]=1/a2[i][j]
+                else:
+                    a2[i][j]=0.5 #femme et homme ca compte moins
+                    a2[j][i]=1/a2[i][j]
+        elif(i==j):
+            a2[i][j]=1
+        j=j+1
+    i=i+1
+    j=0
+a2 = np.round(a2, decimals=2)
+ALT.append(a2)
+print("Alternatives matrix du critère :" +str(df.columns[1]))
+for row in a2:
+    print(' '.join([str(elem) for elem in row]))
+
+#selon le bmi plus le bmi est elevé plus le score est haut
+a3 = [[0] * len(data) for i in range(len(data))]
+i=0
+j=0
+k=0
+ALT=[]
+while i<len(data):
+    while j<len(data):
+        if(i>j):
+            a3[i][j]=data[i][2]/data[j][0]
+            a3[j][i]=1/a3[i][j]
+        elif(i==j):
+            a3[i][j]=1
+        j=j+1
+    i=i+1
+    j=0
+a3 = np.round(a3, decimals=2)
+ALT.append(a3)
+print("Alternatives matrix du critère :" +str(df.columns[2]))
+for row in a3:
+    print(' '.join([str(elem) for elem in row]))
+
+##valeur binaire(diabetic si on l'est le score est plus haut)
+a4 = [[0] * len(data) for i in range(len(data))]
+i=0
+j=0
+k=0
+while i<len(data):
+    while j<len(data):
+        if(i>j):
+            if(data[i][3]=="Yes"):
+                if(data[j][3]=="Yes"):
+                    a4[i][j]=1 #diabet et diabet c'est pareil
+                    a4[j][i]=1/a4[i][j]
+                else:
+                    a4[i][j]=2 #diabat et non diabet donc ça compte plus
+                    a4[j][i]=1/a4[i][j]
+            elif(data[i][3]=='No'):
+                if(data[j][3]=='No'):
+                    a4[i][j]=1  #*non diabet et non diabet c'est pareil
+                    a4[j][i]=1/a4[i][j]
+                else:
+                    a4[i][j]=0.5 #non diabet et diabet ca compte moins
+                    a4[j][i]=1/a4[i][j]
+        elif(i==j):
+            a4[i][j]=1
+        j=j+1
+    i=i+1
+    j=0
+a4 = np.round(a4, decimals=2)
+ALT.append(a4)
+print("Alternatives matrix du critère :" +str(df.columns[3]))
+for row in a4:
+    print(' '.join([str(elem) for elem in row]))
+
+
+##valeur enfant (plus on d'enfant plus le score est plus haut)
+a5 = [[0] * len(data) for i in range(len(data))]
+i=0
+j=0
+k=0
+while i<len(data):
+    while j<len(data):
+        if(i>j):
+            if(data[i][4]==data[j][4]):
+                a5[i][j]=1 #meme nb d'enfant c'est pareil
+                a5[j][i]=1/a5[i][j]
+            elif(data[i][1]>data[j][1]):
+                a5[i][j]=2 #plus d'enfant ça compte plus 
+                a5[j][i]=1/a5[i][j]
+            else:
+                a5[i][j]=0.5 #moins d'enfant ça compte moins
+                a5[j][i]=1/a5[i][j]
+        elif(i==j):
+            a5[i][j]=1
+        j=j+1
+    i=i+1
+    j=0
+a5 = np.round(a5, decimals=2)
+ALT.append(a5)
+print("Alternatives matrix du critère :" +str(df.columns[4]))
+for row in a5:
+    print(' '.join([str(elem) for elem in row]))
+
+
+##valeur binaire(smoker si on l'est le score est plus haut)
+a6 = [[0] * len(data) for i in range(len(data))]
+i=0
+j=0
+k=0
+while i<len(data):
+    while j<len(data):
+        if(i>j):
+            if(data[i][5]=="Yes"):
+                if(data[j][5]=="Yes"):
+                    a6[i][j]=1 #fumeur et fumeur
+                    a6[j][i]=1/a6[i][j]
+                else:
+                    a6[i][j]=2 #fumeur et non fumeur 
+                    a6[j][i]=1/a6[i][j]
+            elif(data[i][5]=='No'):
+                if(data[j][5]=='No'):
+                    a6[i][j]=1 #fumeur et fumeur
+                    a6[j][i]=1/a6[i][j]
+                else:
+                    a6[i][j]=0.5 #NON fumeur et fumeur 
+                    a6[j][i]=1/a6[i][j]
+        elif(i==j):
+            a6[i][j]=1
+        j=j+1
+    i=i+1
+    j=0
+a6 = np.round(a6, decimals=2)
+ALT.append(a6)
+print("Alternatives matrix du critère :" +str(df.columns[5]))
+for row in a6:
+    print(' '.join([str(elem) for elem in row]))
+
+ALT=[]
+ALT.extend([a,a2,a3,a4,a5,a6]) 
+
+print(ALT)
+
+
+AVGnormalisation=[]
+sum = []
+ALTnorma = []
+AVGnorma=[0]*len(data)
+
+somme = 0
+l = 0
+s = 0
+j = 0
+print(" \n 4) Normalized Alternatives")
+#calcul des sommes des colonnes
+for i in range(n):
+    z = ALT[i]
+    while j < len(data):
+        while s < len(data):
+            somme = z[s][j] + somme
+            s = s + 1
+        s = 0
+        j = j + 1
+        somme = np.round(somme, decimals=3)
+        sum.append(somme)
+        somme = 0
+    j = 0
+print("\n Columns Sum")
+print(sum)
+#cellule/par somme
+k=0
+h=0
+for i in range(n):
+    z = ALT[i]
+    while j <len(data):
+        while s <len(data):
+            z[s][j] = (z[s][j]) / sum[l]
+            z[s][j] = np.round(z[s][j], decimals=3)
+            s = s + 1
+        s = 0
+        j = j + 1
+        l = l + 1
+    ALTnorma.append(z)
+    print("\n Normalized Alternative Matrix N°" + str(i + 1))
+    for row in ALTnorma[i]:
+        print(' '.join([str(elem) for elem in row]))
+    print("-------")
+    j = 0
+print(ALTnorma)
+
+AVGnorma = [0] * len(data)
+
+a = [[0] * len(data) for i in range(len(data))]
+j = 0
+l = 0
+k=0
+ii=0
+jj=0
+
+
+# for i in range(n):
+#     z=ALTnorma[i]
+#     k=0
+#     h=0
+#     b=0
+#     somme=0
+#     for k in range(len(data)):
+#         while h<len(data):
+#             AVGnorma=np.mean(z[k][h])
+#             h=h+1   
+#         # AVGnorma[b]=somme/len(data)
+#         # AVGnorma[b]=np.round(AVGnorma[b],decimals=3)
+#         b=b+1
+#         h=0
+#         k=k+1
+#         somme=0
+#     AVGnormalisation.append(AVGnorma)
+
+# print(AVGnormalisation)
+
+
